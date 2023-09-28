@@ -1,1 +1,1 @@
-eiei
+print('sawaddee')

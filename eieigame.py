@@ -15,7 +15,8 @@ run = True
 monster = True
 game_buff = True
 hit = False
-out = 0
+immortal = 0
+buffrespawn = 0
 damage = 25
 
 background_surface = pygame.Surface((width, height))
@@ -48,8 +49,12 @@ while True:
 
         if playerhealth < 100:
             player_health = pygame.Surface((playerhealth, 10))
-            player_health.fill('Red')
+            player_health.fill('Green')
             player_health_rect = player_health.get_rect(center = (player_rect.x+25, player_rect.y-20))
+            player_health_back = pygame.Surface((100, 10))
+            player_health_back.fill('Red')
+            player_health_back_rect = player_health_back.get_rect(center = (player_rect.x+25, player_rect.y-20))
+            screen_diplay.blit(player_health_back, player_health_back_rect)
             screen_diplay.blit(player_health, player_health_rect)
 
         if playerstamina < 100:
@@ -81,20 +86,24 @@ while True:
         if key_input[pygame.K_s] and player_rect.y <= height-75:
             player_rect.y += step
 
+
+    if game_buff:
+        screen_diplay.blit(buff, buff_rect)
     if player_rect.colliderect(buff_rect) and (game_buff == True) and (playerhealth != 100):
         game_buff = False
         playerhealth = 100
-    if game_buff == True:
-        screen_diplay.blit(buff, buff_rect)
+        buffrespawn = pygame.time.get_ticks()+5000
+    if not game_buff and (pygame.time.get_ticks() >= buffrespawn):
+        game_buff = True
 
-    if not player_rect.colliderect(monster_rect) and pygame.time.get_ticks() >= out and hit:
+    if monster:
+        screen_diplay.blit(monster_character, monster_rect)
+    if not player_rect.colliderect(monster_rect) and (pygame.time.get_ticks() >= immortal) and hit:
         hit = False
     if player_rect.colliderect(monster_rect) and (monster == True) and (hit == False):
         playerhealth -= damage
         hit = True
-        out = pygame.time.get_ticks()+1500
-    if monster == True:
-        screen_diplay.blit(monster_character, monster_rect)
+        immortal = pygame.time.get_ticks()+1500
 
     pygame.display.update()
     frame.tick(75)

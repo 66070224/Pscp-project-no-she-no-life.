@@ -3,8 +3,10 @@ import sys
 from button import Button
 
 pygame.init()
+
 WIDTH = 1500
 HEIGHT = 800
+
 pygame.display.set_caption('Mygame')
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT))
 FRAME = pygame.time.Clock()
@@ -12,12 +14,14 @@ FRAME = pygame.time.Clock()
 """PLAY"""
 PLAYERHEALTH = 100
 PLAYER_STAMINA = 100
+DAMAGE = 25
+
 STAMINA = True
 MONSTER = True
 GAME_BUFF = True
 HIT = False
 OUT = 0
-DAMAGE = 25
+
 
 BG_SURFACE_LOAD = pygame.image.load("assets/map1.jpg")
 BG_SURFACE = pygame.transform.scale(BG_SURFACE_LOAD, (WIDTH, HEIGHT))

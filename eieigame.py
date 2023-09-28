@@ -7,11 +7,11 @@ height = 800
 pygame.display.set_caption('Mygame')
 screen_diplay = pygame.display.set_mode((width, height))
 frame = pygame.time.Clock()
-test_font = pygame.font.Font(None, 50)
 
 playerhealth = 100
 playerstamina = 100
 stamina = True
+run = True
 monster = True
 game_buff = True
 hit = False
@@ -54,18 +54,21 @@ while True:
 
         if playerstamina < 100:
             player_stamina = pygame.Surface((playerstamina, 10))
-            player_stamina.fill('Blue')
+            if stamina:
+                player_stamina.fill('Blue')
+            else:
+                player_stamina.fill('Yellow')
             player_stamina_rect = player_stamina.get_rect(center = (player_rect.x+25, player_rect.y-30))
             screen_diplay.blit(player_stamina, player_stamina_rect)
 
         if key_input[pygame.K_LSHIFT] and stamina:
-            step *= 2
+            step *= 1.5
             playerstamina -= 0.5
-            if playerstamina <= 10:
+            if playerstamina <= 5:
                 stamina = False
         else:
             if playerstamina <= 100:
-                playerstamina += 0.5
+                playerstamina += 0.25
             if playerstamina >= 40:
                 stamina = True
 

@@ -21,6 +21,7 @@ MONSTER = True
 GAME_BUFF = True
 HIT = False
 OUT = 0
+hello = "ASdADWQAWDAWDAWDAWD"
 
 
 BG_SURFACE_LOAD = pygame.image.load("assets/map1.jpg")

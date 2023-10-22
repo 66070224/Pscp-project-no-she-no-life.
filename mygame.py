@@ -1,5 +1,6 @@
 import pygame
 import sys
+import random
 from button import Button
 
 pygame.init()
@@ -17,8 +18,6 @@ PLAYER_STAMINA = 100
 DAMAGE = 25
 
 STAMINA = True
-MONSTER = True
-GAME_BUFF = True
 HIT = False
 OUT = 0
 hello = "ASdADWQAWDAWDAWDAWD"
@@ -27,17 +26,28 @@ BG_SURFACE_LOAD = pygame.image.load("assets/map1.jpg")
 BG_SURFACE = pygame.transform.scale(BG_SURFACE_LOAD, (WIDTH, HEIGHT))
 
 PLAYER_LOAD = pygame.image.load("assets/player1.png")
-PLAYER_RESCALE = pygame.transform.scale(PLAYER_LOAD, (100, 150))
+PLAYER_RESCALE = pygame.transform.scale(PLAYER_LOAD, (50, 75))
 PLAYER = PLAYER_RESCALE.get_rect(center=(750, 400))
+DIRACTION = 'd'
 
-BUFF = pygame.Surface((50, 50))
+PLAYER_BULLET = pygame.Surface((10, 10))
+PLAYER_BULLET.fill('Red')
+BULLET = False
+
+GAME_BUFF = True
+BUFF = pygame.Surface((25, 25))
 BUFF.fill('Pink')
-BUFF_RECT = BUFF.get_rect(center=(1000, 500))
+BUFF_RECT = BUFF.get_rect(center=(random.randrange(WIDTH), random.randrange(HEIGHT)))
+print(BUFF_RECT)
 BUFF_RESPAWN = 0
+BUFFSPEED = False
+BUFFSPEED_TIME = 0
 
+MONSTER = True
 MONSTER_LOAD = pygame.image.load("assets/monster.png")
-MONSTER_RES = pygame.transform.scale(MONSTER_LOAD, (100, 150))
-MONSTER_RECT = MONSTER_RES.get_rect(center=(500, 100))
+MONSTER_RES = pygame.transform.scale(MONSTER_LOAD, (50, 75))
+MONSTER_RECT = MONSTER_RES.get_rect(center=(random.randrange(WIDTH), random.randrange(HEIGHT)))
+MONSTER_RESPAWN = 0
 
 
 """MENU"""
@@ -57,38 +67,39 @@ def get_font(size):  # Returns Press-Start-2P in the desired size
 
 
 def play():  # Playing game...
-    global PLAYERHEALTH, STAMINA, HIT, PLAYER_STAMINA, GAME_BUFF, BUFF_RESPAWN, OUT
+    global PLAYERHEALTH, STAMINA, HIT, PLAYER_STAMINA, DIRACTION, PLAYER_BULLET, BULLET, GAME_BUFF, BUFF_RECT, BUFF_RESPAWN, BUFFSPEED, BUFFSPEED_TIME, OUT, MONSTER, MONSTER_RECT
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit()
         key_input = pygame.key.get_pressed()
-        print(key_input)
         SCREEN.blit(BG_SURFACE, (0, 0))
         if PLAYERHEALTH > 0:
-            step = 5
+            playerstep = 4
+            monsterstep = 2
+            bulletspeed = 20
             # if HIT:
             #     PLAYER_RESCALE.fill('Grey')
-            # else:
-            #     PLAYER_RESCALE.fill('Green')
+            if BUFFSPEED == True:
+                playerstep *= 2
             SCREEN.blit(PLAYER_RESCALE, PLAYER)
 
             if PLAYERHEALTH < 100:
-                player_health = pygame.Surface((PLAYERHEALTH, 10))
+                player_health = pygame.Surface((PLAYERHEALTH/2, 5))
                 player_health.fill('Red')
                 player_health_rect = player_health.get_rect(
-                    center=(PLAYER.x+48, PLAYER.y-20))
+                    center=(PLAYER.x+24, PLAYER.y-5))
                 SCREEN.blit(player_health, player_health_rect)
 
             if PLAYER_STAMINA < 100:
-                player_stamina = pygame.Surface((PLAYER_STAMINA, 10))
+                player_stamina = pygame.Surface((PLAYER_STAMINA/2, 5))
                 player_stamina.fill('Blue')
                 player_stamina_rect = player_stamina.get_rect(
-                    center=(PLAYER.x+48, PLAYER.y-30))
+                    center=(PLAYER.x+24, PLAYER.y-10))
                 SCREEN.blit(player_stamina, player_stamina_rect)
 
             if key_input[pygame.K_LSHIFT] and stamina:
-                step *= 2
+                playerstep += 2
                 PLAYER_STAMINA -= 0.5
                 if PLAYER_STAMINA <= 10:
                     stamina = False
@@ -99,36 +110,84 @@ def play():  # Playing game...
                     stamina = True
 
             if key_input[pygame.K_w] and key_input[pygame.K_a] and PLAYER.x >= 0 and PLAYER.y >= 0:
-                PLAYER.y -= step*0.75
-                PLAYER.x -= step*0.75
+                PLAYER.y -= playerstep*0.75
+                PLAYER.x -= playerstep*0.75
+                DIRACTION = 'wa'
             elif key_input[pygame.K_w] and key_input[pygame.K_d] and PLAYER.y >= 0 and PLAYER.x <= WIDTH-50:
-                PLAYER.y -= step*0.75
-                PLAYER.x += step*0.75
+                PLAYER.y -= playerstep*0.75
+                PLAYER.x += playerstep*0.75
+                DIRACTION = 'wd'
             elif key_input[pygame.K_s] and key_input[pygame.K_a] and PLAYER.y <= HEIGHT-75 and PLAYER.x >= 0:
-                PLAYER.y += step*0.75
-                PLAYER.x -= step*0.75
+                PLAYER.y += playerstep*0.75
+                PLAYER.x -= playerstep*0.75
+                DIRACTION = 'sa'
             elif key_input[pygame.K_s] and key_input[pygame.K_d] and PLAYER.y <= HEIGHT-75 and PLAYER.x <= WIDTH-50:
-                PLAYER.y += step*0.75
-                PLAYER.x += step*0.75
+                PLAYER.y += playerstep*0.75
+                PLAYER.x += playerstep*0.75
+                DIRACTION = 'sd'
             elif key_input[pygame.K_a] and PLAYER.x >= 0:
-                PLAYER.x -= step
+                PLAYER.x -= playerstep
+                DIRACTION = 'a'
             elif key_input[pygame.K_w] and PLAYER.y >= 0:
-                PLAYER.y -= step
+                PLAYER.y -= playerstep
+                DIRACTION = 'w'
             elif key_input[pygame.K_d] and PLAYER.x <= WIDTH-50:
-                PLAYER.x += step
+                PLAYER.x += playerstep
+                DIRACTION = 'd'
             elif key_input[pygame.K_s] and PLAYER.y <= HEIGHT-75:
-                PLAYER.y += step
+                PLAYER.y += playerstep
+                DIRACTION = 's'
+            
+            if key_input[pygame.K_f] and not BULLET:
+                BULLET = True
+                firstdiraction = DIRACTION
+                bullet_rect = PLAYER_BULLET.get_rect(center=(PLAYER.x+24, PLAYER.y+35))
+                bullet_time = pygame.time.get_ticks()+1000
+            if BULLET:
+                if MONSTER_RECT.colliderect(bullet_rect):
+                    MONSTER = False
+                    MONSTER_RESPAWN = pygame.time.get_ticks()+2000
+                    BULLET = False
+                if pygame.time.get_ticks() >= bullet_time:
+                    BULLET = False
+                if firstdiraction == 'wa':
+                    bullet_rect.y -= bulletspeed*0.75
+                    bullet_rect.x -= bulletspeed*0.75
+                elif firstdiraction == 'wd':
+                    bullet_rect.y -= bulletspeed*0.75
+                    bullet_rect.x += bulletspeed*0.75
+                elif firstdiraction == 'sa':
+                    bullet_rect.y += bulletspeed*0.75
+                    bullet_rect.x -= bulletspeed*0.75
+                elif firstdiraction == 'sd':
+                    bullet_rect.y += bulletspeed*0.75
+                    bullet_rect.x += bulletspeed*0.75
+                elif firstdiraction == 'a':
+                    bullet_rect.x -= bulletspeed
+                elif firstdiraction == 'w':
+                    bullet_rect.y -= bulletspeed
+                elif firstdiraction == 'd':
+                    bullet_rect.x += bulletspeed
+                elif firstdiraction == 's':
+                    bullet_rect.y += bulletspeed
+                SCREEN.blit(PLAYER_BULLET, bullet_rect)
+
 
         if GAME_BUFF == True:
             SCREEN.blit(BUFF, BUFF_RECT)
-        if PLAYER.colliderect(BUFF_RECT) and (GAME_BUFF == True) and (PLAYERHEALTH != 100):
+        if pygame.time.get_ticks() >= BUFFSPEED_TIME:
+            BUFFSPEED = False
+        if PLAYER.colliderect(BUFF_RECT) and (GAME_BUFF == True):
             GAME_BUFF = False
+            BUFFSPEED = True
+            BUFFSPEED_TIME = pygame.time.get_ticks()+1500
             PLAYERHEALTH = 100
             BUFF_RESPAWN = pygame.time.get_ticks()+5000
         if not GAME_BUFF and (pygame.time.get_ticks() >= BUFF_RESPAWN):
             GAME_BUFF = True
+            BUFF_RECT = BUFF.get_rect(center=(random.randrange(WIDTH), random.randrange(HEIGHT)))
 
-        if not PLAYER.colliderect(MONSTER_RECT) and pygame.time.get_ticks() >= OUT and HIT:
+        if pygame.time.get_ticks() >= OUT and HIT:
             HIT = False
         if PLAYER.colliderect(MONSTER_RECT) and (MONSTER == True) and (HIT == False):
             PLAYERHEALTH -= DAMAGE
@@ -137,14 +196,29 @@ def play():  # Playing game...
 
         if MONSTER == True:
             SCREEN.blit(MONSTER_RES, MONSTER_RECT)
-            if MONSTER_RECT.x < PLAYER.x:
-                MONSTER_RECT.x += 2.5
+            if MONSTER_RECT.y > PLAYER.y and MONSTER_RECT.x > PLAYER.x:
+                MONSTER_RECT.y -= monsterstep*0.75
+                MONSTER_RECT.x -= monsterstep*0.75
+            elif MONSTER_RECT.x < PLAYER.x and MONSTER_RECT.y > PLAYER.y:
+                MONSTER_RECT.y -= monsterstep*0.75
+                MONSTER_RECT.x += monsterstep*0.75
+            elif MONSTER_RECT.y < PLAYER.y and MONSTER_RECT.x > PLAYER.x:
+                MONSTER_RECT.y += monsterstep*0.75
+                MONSTER_RECT.x -= monsterstep*0.75
+            elif MONSTER_RECT.x < PLAYER.x and MONSTER_RECT.y < PLAYER.y:
+                MONSTER_RECT.y += monsterstep*0.75
+                MONSTER_RECT.x += monsterstep*0.75
+            elif MONSTER_RECT.x < PLAYER.x:
+                MONSTER_RECT.x += monsterstep
             elif MONSTER_RECT.x > PLAYER.x:
-                MONSTER_RECT.x -= 2.5
-            if MONSTER_RECT.y < PLAYER.y:
-                MONSTER_RECT.y += 2.5
+                MONSTER_RECT.x -= monsterstep
+            elif MONSTER_RECT.y < PLAYER.y:
+                MONSTER_RECT.y += monsterstep
             elif MONSTER_RECT.y > PLAYER.y:
-                MONSTER_RECT.y -= 2.5
+                MONSTER_RECT.y -= monsterstep
+        if not MONSTER and (pygame.time.get_ticks() >= MONSTER_RESPAWN):
+            MONSTER = True
+            MONSTER_RECT = MONSTER_RES.get_rect(center=(random.randrange(WIDTH), random.randrange(HEIGHT)))
 
         pygame.display.update()
         FRAME.tick(75)

@@ -11,7 +11,7 @@ pygame.display.set_caption("Mygame")
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT))
 frame = pygame.time.Clock()
 
-bg_image = pygame.image.load("map1.jpg").convert()
+bg_image = pygame.image.load("grass_51.png").convert()
 bg_image = pygame.transform.scale(bg_image, (WIDTH, HEIGHT))
 bg_x, bg_y = 0, 0
 

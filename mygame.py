@@ -131,6 +131,9 @@ def maingame():
                 SCREEN.blit(self.stamina_image, self.stamina_rect)
             if self.health > 0:
                 SCREEN.blit(self.health_image, self.health_rect)
+        
+        def reset(self):
+            self.__init__()
 
 
     class Monster(pygame.sprite.Sprite):
@@ -262,8 +265,6 @@ def maingame():
             keys = pygame.key.get_pressed()
             if keys[pygame.K_r]:
                 game_state = "start_menu"
-                player.health = 100
-                player.level = 0
             if keys[pygame.K_q]:
                 pygame.quit()
                 quit()
@@ -298,6 +299,7 @@ def maingame():
                 monsters.add(monster)
             if player.health <= 0:
                 game_state = "game_over"
+                player.reset()
             SCREEN.blit(bg_image, (bg_x, bg_y))
             player.draw()
             bullets.draw(SCREEN)

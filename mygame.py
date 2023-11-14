@@ -1,155 +1,312 @@
 import pygame
-import sys
-from button import Button
+import random
+import math
 
 pygame.init()
 
-WIDTH = 1500
-HEIGHT = 800
+SCREEN_WIDTH = 1800
+SCREEN_HEIGHT = 900
 
-pygame.display.set_caption('Mygame')
-SCREEN = pygame.display.set_mode((WIDTH, HEIGHT))
-FRAME = pygame.time.Clock()
+pygame.display.set_caption("Mygame")
+SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+frame = pygame.time.Clock()
 
-"""PLAY"""
-PLAYERHEALTH = 100
-PLAYER_STAMINA = 100
-DAMAGE = 25
+def draw_start_menu():
+        SCREEN.fill((0, 0, 0))
+        font = pygame.font.SysFont('arial', 40)
+        title = font.render('My Game', True, (255, 255, 255))
+        start_button = font.render('Start(space)', True, (255, 255, 255))
+        SCREEN.blit(title, (SCREEN_WIDTH/2 - title.get_width()/2, SCREEN_HEIGHT/2 - title.get_height()/2))
+        SCREEN.blit(start_button, (SCREEN_WIDTH/2 - start_button.get_width()/2, SCREEN_HEIGHT/2 + start_button.get_height()/2))
+        pygame.display.update()
 
-STAMINA = True
-MONSTER = True
-GAME_BUFF = True
-HIT = False
-OUT = 0
-hello = "ASdADWQAWDAWDAWDAWD"
+def draw_game_over_screen():
+    SCREEN.fill((0, 0, 0))
+    font = pygame.font.SysFont('arial', 40)
+    title = font.render('Game Over', True, (255, 255, 255))
+    restart_button = font.render('R - Restart', True, (255, 255, 255))
+    quit_button = font.render('Q - Quit', True, (255, 255, 255))
+    SCREEN.blit(title, (SCREEN_WIDTH/2 - title.get_width()/2, SCREEN_HEIGHT/2 - title.get_height()/3))
+    SCREEN.blit(restart_button, (SCREEN_WIDTH/2 - restart_button.get_width()/2, SCREEN_HEIGHT/1.9 + restart_button.get_height()))
+    SCREEN.blit(quit_button, (SCREEN_WIDTH/2 - quit_button.get_width()/2, SCREEN_HEIGHT/2 + quit_button.get_height()/2))
+    pygame.display.update()
+
+def maingame():
+    bg_image = pygame.image.load("img/grass_51.png").convert()
+    bg_image = pygame.transform.scale(bg_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    bg_x, bg_y = 0, 0
+
+    text_font = pygame.font.SysFont("monospace", 50)
+
+    monster_cooldown = 0
+    bullet_cooldown = 0
+    cooldown = 5000
+
+    class Player:
+        def __init__(self):
+            self.image = pygame.Surface((20, 20))
+            self.image.fill("Green")
+            self.rect = self.image.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
+            self.direction = 'w'
+            self.health = 100
+            self.stamina = 200
+            self.tired = False
+            self.damage = 50
+            self.walk = 2
+            self.immortal = False
+            self.experience = 0
+            self.expperlevel = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+            self.level = 0
+            self.hit = False
+
+        def update(self, key_input):
+            keya, keyw, keyd, keys, now = False, False, False, False, 0
+            self.dx = 0
+            self.dy = 0
+            if key_input[pygame.K_a]:
+                keya = True
+                now += 1
+            if key_input[pygame.K_w]:
+                keyw = True
+                now += 1
+            if key_input[pygame.K_d]:
+                keyd = True
+                now += 1
+            if key_input[pygame.K_s]:
+                keys = True
+                now += 1
+            if key_input[pygame.K_LSHIFT] and self.stamina >= 0 and not self.tired:
+                step = self.walk + 2
+                self.stamina -= 0.5
+            else:
+                step = self.walk
+                if self.stamina < 200:
+                    if self.stamina < 50:
+                        self.tired = True
+                    else:
+                        self.tired = False
+                    self.stamina += 0.25
+            if now > 0:
+                self.direction = ''
+            if keya:
+                self.dx -= step
+                self.direction += 'a'
+            if keyw:
+                self.dy -= step
+                self.direction += 'w'
+            if keyd:
+                self.dx += step
+                self.direction += 'd'
+            if keys:
+                self.dy += step
+                self.direction += 's'
+            
+            if self.hit:
+                self.hit = False
+                self.immortal = True
+                self.health -= monster.damage
+                self.immortal_time = pygame.time.get_ticks() + 1000
+            if self.immortal and pygame.time.get_ticks() >= self.immortal_time:
+                self.immortal = False
+                self.immortal_time = 0
+
+            if self.experience >= self.expperlevel[self.level] and self.level < 10:
+                if self.level != 0:
+                    self.experience -= self.expperlevel[self.level]
+                self.level += 1
+                self.health = 100
+
+            if self.stamina > 0:
+                self.stamina_image = pygame.Surface((self.stamina/4, 5))
+                self.stamina_image.fill('Blue')
+                self.stamina_rect = self.stamina_image.get_rect(center=(self.rect.x+10, self.rect.y-10))
+            if self.health > 0:
+                self.health_image = pygame.Surface((self.health/2, 5))
+                self.health_image.fill('Red')
+                self.health_rect = self.health_image.get_rect(center=(self.rect.x+10, self.rect.y-5))
+        
+        def draw(self):
+            SCREEN.blit(self.image, self.rect)
+            if self.stamina > 0:
+                SCREEN.blit(self.stamina_image, self.stamina_rect)
+            if self.health > 0:
+                SCREEN.blit(self.health_image, self.health_rect)
 
 
-BG_SURFACE_LOAD = pygame.image.load("assets/map1.jpg")
-BG_SURFACE = pygame.transform.scale(BG_SURFACE_LOAD, (WIDTH, HEIGHT))
+    class Monster(pygame.sprite.Sprite):
+        def __init__(self):
+            pygame.sprite.Sprite.__init__(self)
+            self.image = pygame.Surface((20, 20))
+            self.image.fill("Red")
+            spawn_side = random.choice(['top', 'bottom', 'left', 'right'])
+            if spawn_side == 'top':
+                spawn_x = random.randint(0, SCREEN_WIDTH)
+                spawn_y = -50
+            elif spawn_side == 'bottom':
+                spawn_x = random.randint(0, SCREEN_WIDTH)
+                spawn_y = SCREEN_HEIGHT + 50
+            elif spawn_side == 'left':
+                spawn_x = -50
+                spawn_y = random.randint(0, SCREEN_HEIGHT)
+            elif spawn_side == 'right':
+                spawn_x = SCREEN_WIDTH + 50
+                spawn_y = random.randint(0, SCREEN_HEIGHT)
+            self.rect = self.image.get_rect(center=(spawn_x, spawn_y))
+            self.health = 100
+            self.damage = 25
+            self.walk = 1
+        
+        def update(self):
+            if self.health <= 0:
+                self.kill()
+                exp = Exp(self.rect.x, self.rect.y)
+                exps.add(exp)
+                return
+            if self.rect.colliderect(player.rect) and not player.immortal:
+                player.hit = True
 
-PLAYER_LOAD = pygame.image.load("assets/player1.png")
-PLAYER_RESCALE = pygame.transform.scale(PLAYER_LOAD, (100, 150))
-PLAYER = PLAYER_RESCALE.get_rect(center=(750, 400))
+            dx = SCREEN_WIDTH//2 - self.rect.centerx
+            dy = SCREEN_HEIGHT//2 - self.rect.centery
+            distance = math.sqrt(dx ** 2 + dy ** 2)
+            if distance != 0:
+                self.dx = (dx / distance) * self.walk
+                self.dy = (dy / distance) * self.walk
+            self.rect.x += self.dx - player.dx
+            self.rect.y += self.dy - player.dy
 
-BUFF = pygame.Surface((50, 50))
-BUFF.fill('Pink')
-BUFF_RECT = BUFF.get_rect(center=(1000, 500))
-
-MONSTER_LOAD = pygame.image.load("assets/monster.png")
-MONSTER_RES = pygame.transform.scale(MONSTER_LOAD, (100, 150))
-MONSTER_RECT = MONSTER_RES.get_rect(center=(500, 100))
-
-
-"""MENU"""
-LOAD_PLAY_BUTTON = pygame.image.load("assets/play_button.png")
-PLAY = pygame.transform.scale(LOAD_PLAY_BUTTON, (250, 100))
-
-LOAD_MENU_BG = pygame.image.load("assets/menu_bg.png")
-MENU_BG = pygame.transform.scale(LOAD_MENU_BG, (WIDTH, HEIGHT))
+        def draw(self):
+            SCREEN.blit(self.image, self.rect)
 
 
-posX = 350
-posY = 400
+    class Bullet(pygame.sprite.Sprite):
+        def __init__(self, diraction):
+            pygame.sprite.Sprite.__init__(self)
+            self.image = pygame.Surface((10, 10))
+            self.image.fill("Yellow")
+            self.rect = self.image.get_rect(center=(player.rect.x+10, player.rect.y+10))
+            self.direction = diraction
+            self.speed = 20
+            self.damage = 50
+            self.time = 0
+            self.derespawn = pygame.time.get_ticks()+500
+        
+        def update(self):
+            dx = 0
+            dy = 0
+            if pygame.time.get_ticks() >= self.derespawn:
+                self.kill()
+                return
+            else:
+                hit_monsters = pygame.sprite.spritecollide(self, monsters, False)
+                for monster in hit_monsters:
+                    monster.health -= self.damage
+                    self.kill()
+            if 'a' in self.direction:
+                dx -= self.speed
+            if 'w' in self.direction:
+                dy -= self.speed
+            if 'd' in self.direction:
+                dx += self.speed
+            if 's' in self.direction:
+                dy += self.speed
+            
+            self.rect.x += dx - player.dx
+            self.rect.y += dy - player.dy
+
+        def draw(self):
+            SCREEN.blit(self.image, self.rect)
 
 
-def get_font(size):  # Returns Press-Start-2P in the desired size
-    return pygame.font.Font("assets/font.ttf", size)
+    class Exp(pygame.sprite.Sprite):
+        def __init__(self,x ,y):
+            pygame.sprite.Sprite.__init__(self)
+            self.image = pygame.Surface((10, 10))
+            self.image.fill("Yellow")
+            self.rect = self.image.get_rect(center=(x+10, y+10))
+            self.exp = 20
+        
+        def update(self):
+            if self.rect.colliderect(player.rect):
+                player.experience += self.exp
+                self.kill()
+            self.rect.x -= player.dx
+            self.rect.y -= player.dy
+        
+        def draw(self):
+            SCREEN.blit(self.image, self.rect)
 
+    player = Player()
 
-def play():  # Playing game...
-    global PLAYERHEALTH, STAMINA, HIT, PLAYER_STAMINA, GAME_BUFF, OUT
+    monster = Monster()
+    monsters = pygame.sprite.Group()
+
+    bullet = Bullet(player.direction)
+    bullets = pygame.sprite.Group()
+
+    exp = Exp(monster.rect.x, monster.rect.y)
+    exps = pygame.sprite.Group()
+
+    game_state = "start_menu"
+
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit()
-        key_input = pygame.key.get_pressed()
-        SCREEN.blit(BG_SURFACE, (0, 0))
-        if PLAYERHEALTH > 0:
-            step = 5
-            # if HIT:
-            #     PLAYER_RESCALE.fill('Grey')
-            # else:
-            #     PLAYER_RESCALE.fill('Green')
-            SCREEN.blit(PLAYER_RESCALE, PLAYER)
-
-            if PLAYERHEALTH < 100:
-                player_health = pygame.Surface((PLAYERHEALTH, 10))
-                player_health.fill('Red')
-                player_health_rect = player_health.get_rect(
-                    center=(PLAYER.x+48, PLAYER.y-20))
-                SCREEN.blit(player_health, player_health_rect)
-
-            if PLAYER_STAMINA < 100:
-                player_stamina = pygame.Surface((PLAYER_STAMINA, 10))
-                player_stamina.fill('Blue')
-                player_stamina_rect = player_stamina.get_rect(
-                    center=(PLAYER.x+25, PLAYER.y-30))
-                SCREEN.blit(player_stamina, player_stamina_rect)
-
-            if key_input[pygame.K_LSHIFT] and stamina:
-                step *= 2
-                PLAYER_STAMINA -= 0.5
-                if PLAYER_STAMINA <= 10:
-                    stamina = False
-            else:
-                if PLAYER_STAMINA <= 100:
-                    PLAYER_STAMINA += 0.5
-                if PLAYER_STAMINA >= 40:
-                    stamina = True
-
-            if key_input[pygame.K_a] and PLAYER.x >= 0:
-                PLAYER.x -= step
-            if key_input[pygame.K_w] and PLAYER.y >= 0:
-                PLAYER.y -= step
-            if key_input[pygame.K_d] and PLAYER.x <= WIDTH-50:
-                PLAYER.x += step
-            if key_input[pygame.K_s] and PLAYER.y <= HEIGHT-75:
-                PLAYER.y += step
-
-        if PLAYER.colliderect(BUFF_RECT) and (GAME_BUFF == True) and (PLAYERHEALTH != 100):
-            GAME_BUFF = False
-            PLAYERHEALTH = 100
-        if GAME_BUFF == True:
-            SCREEN.blit(BUFF, BUFF_RECT)
-
-        if not PLAYER.colliderect(MONSTER_RECT) and pygame.time.get_ticks() >= OUT and HIT:
-            HIT = False
-        if PLAYER.colliderect(MONSTER_RECT) and (MONSTER == True) and (HIT == False):
-            PLAYERHEALTH -= DAMAGE
-            HIT = True
-            OUT = pygame.time.get_ticks()+1500
-        if MONSTER == True:
-            SCREEN.blit(MONSTER_RES, MONSTER_RECT)
-
-        pygame.display.update()
-        FRAME.tick(75)
-
-
-def main_menu():  # Menu page
-    while True:
-        SCREEN.blit(MENU_BG, (0, 0))
-
-        MENU_MOUSE_POS = pygame.mouse.get_pos()
-        MENU_TEXT = get_font(100).render("MAIN MENU", True, "#b68f40")
-        MENU_RECT = MENU_TEXT.get_rect(center=(WIDTH//2, 120))
-
-        PLAY_BUTTON = Button(image=PLAY, pos=(WIDTH//2, 320),
-                             text_input="PLAY", font=get_font(75), base_color="#d7fcd4", hovering_color="Black")
-        SCREEN.blit(MENU_TEXT, MENU_RECT)
-
-        for button in [PLAY_BUTTON]:
-            button.changeColor(MENU_MOUSE_POS)
-            button.update(SCREEN)
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+        if game_state == "start_menu":
+            draw_start_menu()
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_SPACE]:
+                game_state = "game"
+        elif game_state == "game_over":
+            draw_game_over_screen()
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_r]:
+                game_state = "start_menu"
+                player.health = 100
+                player.level = 0
+            if keys[pygame.K_q]:
                 pygame.quit()
-                sys.exit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if PLAY_BUTTON.checkForInput(MENU_MOUSE_POS):
-                    play()
+                quit()
+        elif game_state == "game":
+            key_input = pygame.key.get_pressed()
+            player.update(key_input)
+            bullets.update()
+            monsters.update()
+            exps.update()
+            bg_x -= player.dx
+            bg_y -= player.dy
+            bg_x %= bg_image.get_width()
+            bg_y %= bg_image.get_height()
+            SCREEN.blit(bg_image, (bg_x, bg_y))
+            SCREEN.blit(bg_image, (bg_x - bg_image.get_width(), bg_y))
+            SCREEN.blit(bg_image, (bg_x + bg_image.get_width(), bg_y))
+            SCREEN.blit(bg_image, (bg_x, bg_y - bg_image.get_height()))
+            SCREEN.blit(bg_image, (bg_x, bg_y + bg_image.get_height()))
+            SCREEN.blit(bg_image, (bg_x - bg_image.get_width(), bg_y - bg_image.get_height()))
+            SCREEN.blit(bg_image, (bg_x + bg_image.get_width(), bg_y - bg_image.get_height()))
+            SCREEN.blit(bg_image, (bg_x - bg_image.get_width(), bg_y + bg_image.get_height()))
+            SCREEN.blit(bg_image, (bg_x + bg_image.get_width(), bg_y + bg_image.get_height()))
+            if key_input[pygame.K_SPACE] and pygame.time.get_ticks() >= bullet_cooldown:
+                bullet_cooldown = pygame.time.get_ticks() + 250
+                bullet = Bullet(player.direction)
+                bullets.add(bullet)
+            if pygame.time.get_ticks() >= monster_cooldown:
+                monster_cooldown = pygame.time.get_ticks() + cooldown
+                if cooldown > 20:
+                    cooldown -= 1
+                monster = Monster()
+                monsters.add(monster)
+            if player.health <= 0:
+                game_state = "game_over"
+            SCREEN.blit(bg_image, (bg_x, bg_y))
+            player.draw()
+            bullets.draw(SCREEN)
+            monsters.draw(SCREEN)
+            exps.draw(SCREEN)
+            textlevel = text_font.render(str(player.level), 1, (0, 0, 0))
+            SCREEN.blit(textlevel, (0, 0))
 
-        pygame.display.update()
+            pygame.display.update()
+            frame.tick(60)
 
-
-main_menu()
+maingame()

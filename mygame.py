@@ -63,9 +63,12 @@ def maingame():
 
     class Player:
         def __init__(self):
-            self.image = pygame.Surface((20, 20))
-            self.image.fill("Green")
-            self.rect = self.image.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
+            self.walkRight = [pygame.image.load('img/player/R1.png'), pygame.image.load('img/player/R2.png'), pygame.image.load('img/player/R3.png'), pygame.image.load('img/player/R4.png'), pygame.image.load('img/player/R5.png'), pygame.image.load('img/player/R6.png'), pygame.image.load('img/player/R7.png'), pygame.image.load('img/player/R8.png'), pygame.image.load('img/player/R9.png')]
+            self.walkLeft = [pygame.image.load('img/player/L1.png'), pygame.image.load('img/player/L2.png'), pygame.image.load('img/player/L3.png'), pygame.image.load('img/player/L4.png'), pygame.image.load('img/player/L5.png'), pygame.image.load('img/player/L6.png'), pygame.image.load('img/player/L7.png'), pygame.image.load('img/player/L8.png'), pygame.image.load('img/player/L9.png')]
+            self.walkCount = 0
+            self.image = pygame.image.load('img/player/R1.png')
+            self.rect = (SCREEN_WIDTH//2, SCREEN_HEIGHT//2)
+            self.diraction = 'r'
             self.health = 100
             self.stamina = 200
             self.tired = False
@@ -80,6 +83,7 @@ def maingame():
             self.shootrange = 500
 
         def update(self, key_input):
+            self.walkjing = False
             self.dx = 0
             self.dy = 0
             if key_input[pygame.K_LSHIFT] and self.stamina >= 0 and not self.tired:
@@ -94,13 +98,29 @@ def maingame():
                         self.tired = False
                     self.stamina += 0.25
             if key_input[pygame.K_a]:
+                self.diraction = 'l'
                 self.dx -= step
+                self.walkjing = True
             if key_input[pygame.K_w]:
                 self.dy -= step
+                self.walkjing = True
             if key_input[pygame.K_d]:
+                self.diraction = 'r'
                 self.dx += step
+                self.walkjing = True
             if key_input[pygame.K_s]:
                 self.dy += step
+                self.walkjing = True
+
+            if self.walkCount + 1 >= 27:
+                self.walkCount = 0
+            if self.diraction == 'l' and self.walkjing:
+                self.image = self.walkLeft[self.walkCount//3]
+                self.walkCount += 1
+            elif self.diraction == 'r' and self.walkjing:
+                self.image = self.walkRight[self.walkCount//3]
+                self.walkCount += 1
+            self.rect = self.image.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
             
             if self.hit:
                 self.hit = False
@@ -123,14 +143,19 @@ def maingame():
             if self.stamina > 0:
                 self.stamina_image = pygame.Surface((self.stamina/4, 5))
                 self.stamina_image.fill('Blue')
-                self.stamina_rect = self.stamina_image.get_rect(center=(self.rect.x+10, self.rect.y-10))
+                self.stamina_rect = self.stamina_image.get_rect(center=(SCREEN_WIDTH//2, (SCREEN_HEIGHT//2)-30))
             if self.health > 0:
                 self.health_image = pygame.Surface((self.health/2, 5))
                 self.health_image.fill('Red')
-                self.health_rect = self.health_image.get_rect(center=(self.rect.x+10, self.rect.y-5))
+                self.health_rect = self.health_image.get_rect(center=(SCREEN_WIDTH//2, (SCREEN_HEIGHT//2)-25))
         
         def draw(self):
-            SCREEN.blit(self.image, self.rect)
+            if self.diraction == 'l':
+                SCREEN.blit(self.image, self.rect)
+                self.walkCount += 1
+            elif self.diraction == 'r':
+                SCREEN.blit(self.image, self.rect)
+                self.walkCount += 1
             if self.stamina > 0:
                 SCREEN.blit(self.stamina_image, self.stamina_rect)
             if self.health > 0:
@@ -187,7 +212,7 @@ def maingame():
             pygame.sprite.Sprite.__init__(self)
             self.image = pygame.Surface((10, 10))
             self.image.fill("Yellow")
-            self.rect = self.image.get_rect(center=(player.rect.x + 10, player.rect.y + 10))
+            self.rect = self.image.get_rect(center=(player.rect.x+30, player.rect.y+35))
             self.damage = 50
             self.speed = 10
             self.derespawn = pygame.time.get_ticks() + player.shootrange

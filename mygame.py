@@ -114,12 +114,19 @@ def maingame():
 
             if self.walkCount + 1 >= 27:
                 self.walkCount = 0
-            if self.diraction == 'l' and self.walkjing:
-                self.image = self.walkLeft[self.walkCount//3]
-                self.walkCount += 1
-            elif self.diraction == 'r' and self.walkjing:
-                self.image = self.walkRight[self.walkCount//3]
-                self.walkCount += 1
+            if self.walkjing:
+                if self.diraction == 'l':
+                    self.image = self.walkLeft[self.walkCount//3]
+                    self.walkCount += 1
+                elif self.diraction == 'r':
+                    self.image = self.walkRight[self.walkCount//3]
+                    self.walkCount += 1
+            else:
+                if self.diraction == 'l':
+                    self.image = self.walkLeft[0]
+                elif self.diraction == 'r':
+                    self.image = self.walkRight[0]
+                self.walkCount = 0
             self.rect = self.image.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
             
             if self.hit:
@@ -165,8 +172,11 @@ def maingame():
     class Monster(pygame.sprite.Sprite):
         def __init__(self):
             pygame.sprite.Sprite.__init__(self)
-            self.image = pygame.Surface((20, 20))
-            self.image.fill("Red")
+            self.right = [pygame.image.load('img/goblin/R1E.png'), pygame.image.load('img/goblin/R2E.png'), pygame.image.load('img/goblin/R3E.png'), pygame.image.load('img/goblin/R4E.png'), pygame.image.load('img/goblin/R5E.png'), pygame.image.load('img/goblin/R6E.png'), pygame.image.load('img/goblin/R7E.png'), pygame.image.load('img/goblin/R8E.png'), pygame.image.load('img/goblin/R9E.png'), pygame.image.load('img/goblin/R10E.png'), pygame.image.load('img/goblin/R11E.png')]
+            self.left = [pygame.image.load('img/goblin/L1E.png'), pygame.image.load('img/goblin/L2E.png'), pygame.image.load('img/goblin/L3E.png'), pygame.image.load('img/goblin/L4E.png'), pygame.image.load('img/goblin/L5E.png'), pygame.image.load('img/goblin/L6E.png'), pygame.image.load('img/goblin/L7E.png'), pygame.image.load('img/goblin/L8E.png'), pygame.image.load('img/goblin/L9E.png'), pygame.image.load('img/goblin/L10E.png'), pygame.image.load('img/goblin/L11E.png')]
+            self.image = pygame.image.load('img/goblin/R1E.png')
+            self.walkCount = 0
+            self.diraction = 'r'
             spawn_side = random.choice(['top', 'bottom', 'left', 'right'])
             if spawn_side == 'top':
                 spawn_x = random.randint(0, SCREEN_WIDTH)
@@ -186,14 +196,6 @@ def maingame():
             self.walk = 1
         
         def update(self):
-            if self.health <= 0:
-                self.kill()
-                exp = Exp(self.rect.x, self.rect.y)
-                exps.add(exp)
-                return
-            if self.rect.colliderect(player.rect) and not player.immortal:
-                player.hit = True
-
             dx = SCREEN_WIDTH//2 - self.rect.centerx
             dy = SCREEN_HEIGHT//2 - self.rect.centery
             distance = math.sqrt(dx ** 2 + dy ** 2)
@@ -202,6 +204,31 @@ def maingame():
                 self.dy = (dy / distance) * self.walk
             self.rect.x += self.dx - player.dx
             self.rect.y += self.dy - player.dy
+
+            self.walkjing = False
+            if self.dx > 0:
+                self.diraction = 'r'
+                self.walkjing = True
+            elif self.dx < 0:
+                self.diraction = 'l'
+                self.walkjing = True
+            if self.walkCount + 1 >= 33:
+                self.walkCount = 0
+
+            if self.diraction == 'l' and self.walkjing:
+                self.image = self.left[self.walkCount//3]
+                self.walkCount += 1
+            elif self.diraction == 'r' and self.walkjing:
+                self.image = self.right[self.walkCount//3]
+                self.walkCount += 1
+
+            if self.health <= 0:
+                self.kill()
+                exp = Exp(self.rect.x, self.rect.y)
+                exps.add(exp)
+                return
+            if self.rect.colliderect(player.rect) and not player.immortal:
+                player.hit = True
 
         def draw(self):
             SCREEN.blit(self.image, self.rect)
@@ -245,7 +272,7 @@ def maingame():
             pygame.sprite.Sprite.__init__(self)
             self.image = pygame.Surface((10, 10))
             self.image.fill("Pink")
-            self.rect = self.image.get_rect(center=(x+10, y+10))
+            self.rect = self.image.get_rect(center=(x+30, y+35))
             self.exp = 10
         
         def update(self):

@@ -11,25 +11,44 @@ pygame.display.set_caption("Mygame")
 SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 frame = pygame.time.Clock()
 
+now = 'menu'
+
 def draw_start_menu():
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                quit()
         SCREEN.fill((0, 0, 0))
         font = pygame.font.SysFont('arial', 40)
         title = font.render('My Game', True, (255, 255, 255))
         start_button = font.render('Start(space)', True, (255, 255, 255))
         SCREEN.blit(title, (SCREEN_WIDTH/2 - title.get_width()/2, SCREEN_HEIGHT/2 - title.get_height()/2))
         SCREEN.blit(start_button, (SCREEN_WIDTH/2 - start_button.get_width()/2, SCREEN_HEIGHT/2 + start_button.get_height()/2))
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_SPACE]:
+            return "game"
         pygame.display.update()
 
 def draw_game_over_screen():
-    SCREEN.fill((0, 0, 0))
-    font = pygame.font.SysFont('arial', 40)
-    title = font.render('Game Over', True, (255, 255, 255))
-    restart_button = font.render('R - Restart', True, (255, 255, 255))
-    quit_button = font.render('Q - Quit', True, (255, 255, 255))
-    SCREEN.blit(title, (SCREEN_WIDTH/2 - title.get_width()/2, SCREEN_HEIGHT/2 - title.get_height()/3))
-    SCREEN.blit(restart_button, (SCREEN_WIDTH/2 - restart_button.get_width()/2, SCREEN_HEIGHT/1.9 + restart_button.get_height()))
-    SCREEN.blit(quit_button, (SCREEN_WIDTH/2 - quit_button.get_width()/2, SCREEN_HEIGHT/2 + quit_button.get_height()/2))
-    pygame.display.update()
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                quit()
+        SCREEN.fill((0, 0, 0))
+        font = pygame.font.SysFont('arial', 40)
+        title = font.render('Game Over', True, (255, 255, 255))
+        restart_button = font.render('R - Restart', True, (255, 255, 255))
+        quit_button = font.render('Q - Quit', True, (255, 255, 255))
+        SCREEN.blit(title, (SCREEN_WIDTH/2 - title.get_width()/2, SCREEN_HEIGHT/2 - title.get_height()/3))
+        SCREEN.blit(restart_button, (SCREEN_WIDTH/2 - restart_button.get_width()/2, SCREEN_HEIGHT/1.9 + restart_button.get_height()))
+        SCREEN.blit(quit_button, (SCREEN_WIDTH/2 - quit_button.get_width()/2, SCREEN_HEIGHT/2 + quit_button.get_height()/2))
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_r]:
+            return "menu"
+        if keys[pygame.K_q]:
+            pygame.quit()
+            quit()
+        pygame.display.update()
 
 def maingame():
     bg_image = pygame.image.load("img/grass_51.png").convert()
@@ -131,9 +150,6 @@ def maingame():
                 SCREEN.blit(self.stamina_image, self.stamina_rect)
             if self.health > 0:
                 SCREEN.blit(self.health_image, self.health_rect)
-        
-        def reset(self):
-            self.__init__()
 
 
     class Monster(pygame.sprite.Sprite):
@@ -255,60 +271,51 @@ def maingame():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit()
-        if game_state == "start_menu":
-            draw_start_menu()
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_SPACE]:
-                game_state = "game"
-        elif game_state == "game_over":
-            draw_game_over_screen()
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_r]:
-                game_state = "start_menu"
-            if keys[pygame.K_q]:
-                pygame.quit()
-                quit()
-        elif game_state == "game":
-            key_input = pygame.key.get_pressed()
-            player.update(key_input)
-            bullets.update()
-            monsters.update()
-            exps.update()
-            bg_x -= player.dx
-            bg_y -= player.dy
-            bg_x %= bg_image.get_width()
-            bg_y %= bg_image.get_height()
-            SCREEN.blit(bg_image, (bg_x, bg_y))
-            SCREEN.blit(bg_image, (bg_x - bg_image.get_width(), bg_y))
-            SCREEN.blit(bg_image, (bg_x + bg_image.get_width(), bg_y))
-            SCREEN.blit(bg_image, (bg_x, bg_y - bg_image.get_height()))
-            SCREEN.blit(bg_image, (bg_x, bg_y + bg_image.get_height()))
-            SCREEN.blit(bg_image, (bg_x - bg_image.get_width(), bg_y - bg_image.get_height()))
-            SCREEN.blit(bg_image, (bg_x + bg_image.get_width(), bg_y - bg_image.get_height()))
-            SCREEN.blit(bg_image, (bg_x - bg_image.get_width(), bg_y + bg_image.get_height()))
-            SCREEN.blit(bg_image, (bg_x + bg_image.get_width(), bg_y + bg_image.get_height()))
-            if key_input[pygame.K_SPACE] and pygame.time.get_ticks() >= bullet_cooldown:
-                bullet_cooldown = pygame.time.get_ticks() + 250
-                bullet = Bullet(player.direction)
-                bullets.add(bullet)
-            if pygame.time.get_ticks() >= monster_cooldown:
-                monster_cooldown = pygame.time.get_ticks() + cooldown
-                if cooldown > 20:
-                    cooldown -= 1
-                monster = Monster()
-                monsters.add(monster)
-            if player.health <= 0:
-                game_state = "game_over"
-                player.reset()
-            SCREEN.blit(bg_image, (bg_x, bg_y))
-            player.draw()
-            bullets.draw(SCREEN)
-            monsters.draw(SCREEN)
-            exps.draw(SCREEN)
-            textlevel = text_font.render(str(player.level), 1, (0, 0, 0))
-            SCREEN.blit(textlevel, (0, 0))
+        key_input = pygame.key.get_pressed()
+        player.update(key_input)
+        bullets.update()
+        monsters.update()
+        exps.update()
+        bg_x -= player.dx
+        bg_y -= player.dy
+        bg_x %= bg_image.get_width()
+        bg_y %= bg_image.get_height()
+        SCREEN.blit(bg_image, (bg_x, bg_y))
+        SCREEN.blit(bg_image, (bg_x - bg_image.get_width(), bg_y))
+        SCREEN.blit(bg_image, (bg_x + bg_image.get_width(), bg_y))
+        SCREEN.blit(bg_image, (bg_x, bg_y - bg_image.get_height()))
+        SCREEN.blit(bg_image, (bg_x, bg_y + bg_image.get_height()))
+        SCREEN.blit(bg_image, (bg_x - bg_image.get_width(), bg_y - bg_image.get_height()))
+        SCREEN.blit(bg_image, (bg_x + bg_image.get_width(), bg_y - bg_image.get_height()))
+        SCREEN.blit(bg_image, (bg_x - bg_image.get_width(), bg_y + bg_image.get_height()))
+        SCREEN.blit(bg_image, (bg_x + bg_image.get_width(), bg_y + bg_image.get_height()))
+        if key_input[pygame.K_SPACE] and pygame.time.get_ticks() >= bullet_cooldown:
+            bullet_cooldown = pygame.time.get_ticks() + 250
+            bullet = Bullet(player.direction)
+            bullets.add(bullet)
+        if pygame.time.get_ticks() >= monster_cooldown:
+            monster_cooldown = pygame.time.get_ticks() + cooldown
+            if cooldown > 20:
+                cooldown -= 1
+            monster = Monster()
+            monsters.add(monster)
+        if player.health <= 0:
+            return "game_over"
+        SCREEN.blit(bg_image, (bg_x, bg_y))
+        player.draw()
+        bullets.draw(SCREEN)
+        monsters.draw(SCREEN)
+        exps.draw(SCREEN)
+        textlevel = text_font.render(str(player.level), 1, (0, 0, 0))
+        SCREEN.blit(textlevel, (0, 0))
 
-            pygame.display.update()
-            frame.tick(60)
+        pygame.display.update()
+        frame.tick(60)
 
-maingame()
+while True:
+    if now == "menu":
+        now = draw_start_menu()
+    if now == "game":
+        now = maingame()
+    if now == 'game_over':
+        now = draw_game_over_screen()
